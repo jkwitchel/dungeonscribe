@@ -1,0 +1,15 @@
+{
+    "local_transcript_dir": "<your_transcript_directory>",
+    "local_summary_dir": "<your_summary_directory>",
+    "unraid_path": "<your_unraid_network_path>",
+    "openai_api_key": "<your_openai_api_key>",
+    "openai_model": "gpt-4o-mini",
+    "whisper_model": "medium",
+    "verbose_logging": true,
+    "speaker_map": {
+        "discord_username": {
+            "player": "Player Name",
+            "character": "Character Name"
+        }
+    }
+}
