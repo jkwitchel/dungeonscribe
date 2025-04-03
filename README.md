@@ -31,7 +31,7 @@ Turn your raw Craig bot recordings into polished D&D session notes with this all
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/yourusername/the-dungeon-scribe.git
+git clone https://github.com/jkwitchel/the-dungeon-scribe.git
 cd the-dungeon-scribe
 ```
 
@@ -139,7 +139,7 @@ The app can store transcripts and summaries on a network path like `\\TOWER\jwit
 
 ## 🧙 About the Creator
 
-Made by Jeremy Witchel to simplify and preserve his epic D&D campaigns with friends.
+Made by Jeremy Witchel to simplify and preserve my epic D&D campaigns with friends.
 
 ---
 
