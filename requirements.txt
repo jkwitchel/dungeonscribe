@@ -1,0 +1,7 @@
+openai>=1.0.0
+tiktoken
+torch
+whisper
+pydub
+ffmpeg-python
+tk
