@@ -40,9 +40,12 @@ log = setup_logging(verbose=False)
 # --- Config Management ---
 def load_config():
     if not os.path.exists(CONFIG_FILE):
+        print("⚠️ config.json not found!")
         return {}
     with open(CONFIG_FILE, 'r') as f:
+        print("✅ Loaded config.json")
         return json.load(f)
+
 
 def save_config(config):
     with open(CONFIG_FILE, 'w') as f:
@@ -263,7 +266,8 @@ class TranscriptionApp:
             self.status.set("❌ Error occurred")
 
     def open_settings(self):
-        SettingsWindow(self.root, self.config, self.update_config)
+        fresh_config = load_config()  # Reload from file
+        SettingsWindow(self.root, fresh_config, self.update_config)
 
     def update_config(self, new_config):
         self.config = new_config
