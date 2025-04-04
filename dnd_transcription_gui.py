@@ -217,10 +217,14 @@ class TranscriptionApp:
         entry.grid(row=0, column=1, sticky="ew", pady=5)
         ttk.Button(frame, text="Browse", command=self.browse_file).grid(row=0, column=2, sticky="ew", padx=5)
 
-        ttk.Button(frame, text="Transcribe & Summarize", command=self.run_all).grid(row=1, column=0, columnspan=3, pady=10)
-        ttk.Label(frame, textvariable=self.status, foreground="#80ff80").grid(row=2, column=0, columnspan=3, pady=5)
+        # NEW: Individual operation buttons
+        ttk.Button(frame, text="Run Transcription Only", command=lambda: threading.Thread(target=self.run_transcription).start()).grid(row=1, column=0, columnspan=3, pady=5)
+        ttk.Button(frame, text="Run Chunk + Summarize", command=lambda: threading.Thread(target=self.run_chunk_summarize).start()).grid(row=2, column=0, columnspan=3, pady=5)
+        ttk.Button(frame, text="Run Final Summary", command=lambda: threading.Thread(target=self.run_second_pass).start()).grid(row=3, column=0, columnspan=3, pady=5)
+        ttk.Button(frame, text="Run All (Full Pipeline)", command=lambda: threading.Thread(target=self.run_all).start()).grid(row=4, column=0, columnspan=3, pady=5)
 
-        ttk.Button(frame, text="Settings ⚙️", command=self.open_settings).grid(row=3, column=0, columnspan=3, pady=10)
+        ttk.Label(frame, textvariable=self.status, foreground="#80ff80").grid(row=4, column=0, columnspan=3, pady=5)
+        ttk.Button(frame, text="Settings ⚙️", command=self.open_settings).grid(row=5, column=0, columnspan=3, pady=10)
 
     def browse_file(self):
         path = filedialog.askopenfilename(filetypes=[("Zip Files", "*.zip")])
@@ -230,40 +234,76 @@ class TranscriptionApp:
     def run_all(self):
         threading.Thread(target=self.process).start()
 
-    def process(self):
+    def run_transcription(self):
         try:
             zip_file = self.zip_path.get()
             if not zip_file.endswith(".zip"):
                 raise ValueError("Select a valid Craig .zip file")
 
-            self.status.set("Transcribing...")
+            self.status.set("🔁 Running transcription...")
 
             today_str = date.today().isoformat()
             transcript_path = os.path.join(self.config['local_transcript_dir'], f"{today_str} - transcript.txt")
-            summary_path = os.path.join(self.config['local_summary_dir'], f"{today_str} - summary.txt")
 
             os.makedirs(self.config['local_transcript_dir'], exist_ok=True)
-            os.makedirs(self.config['local_summary_dir'], exist_ok=True)
 
             os.environ['CRAIG_ZIP'] = zip_file
             os.environ['TRANSCRIPT_OUTPUT'] = transcript_path
+            os.environ['WHISPER_MODEL'] = self.config['whisper_model']
             os.environ['OPENAI_API_KEY'] = self.config['openai_api_key']
             os.environ['OPENAI_MODEL'] = self.config['openai_model']
-            os.environ['WHISPER_MODEL'] = self.config['whisper_model']
 
             run_script("transcribe_audacity_zip.py")
-            self.status.set("Summarizing...")
 
-            os.environ['SUMMARY_INPUT'] = transcript_path
-            os.environ['SUMMARY_OUTPUT'] = summary_path
-
-            run_script("dnd_transcript_summarizer.py")
-            self.status.set("✅ Done! Files saved.")
-
+            self.status.set("✅ Transcription complete.")
         except Exception as e:
-            log.exception("Error in process")
+            log.exception("Transcription error")
             messagebox.showerror("Error", str(e))
-            self.status.set("❌ Error occurred")
+            self.status.set("❌ Transcription failed")
+
+    def run_chunk_summarize(self):
+            try:
+                self.status.set("🧠 Chunking + Summarizing transcript...")
+                today = date.today().isoformat()
+                transcript_path = os.path.join(self.config['local_transcript_dir'], f"{today} - transcript.txt")
+                chunk_dir = os.path.join(self.config['local_summary_dir'], f"{today} - chunks")
+                os.makedirs(chunk_dir, exist_ok=True)
+
+                os.environ['SUMMARY_INPUT'] = transcript_path
+                os.environ['SUMMARY_CHUNK_DIR'] = chunk_dir
+                os.environ['OPENAI_API_KEY'] = self.config['openai_api_key']
+                os.environ['OPENAI_MODEL'] = self.config['openai_model']
+
+                run_script("dnd_chunk_and_summarize.py")
+                self.status.set("✅ Chunk summarization complete.")
+            except Exception as e:
+                log.exception("Chunk summarization error")
+                messagebox.showerror("Error", str(e))
+                self.status.set("❌ Chunk summarization failed")
+
+    def run_second_pass(self):
+        try:
+            self.status.set("🧠 Running final summary...")
+            today = date.today().isoformat()
+            chunk_dir = os.path.join(self.config['local_summary_dir'], f"{today} - chunks")
+            summary_out = os.path.join(self.config['local_summary_dir'], f"{today} - summary.txt")
+
+            os.environ['SUMMARY_CHUNK_DIR'] = chunk_dir
+            os.environ['SUMMARY_OUTPUT'] = summary_out
+            os.environ['OPENAI_API_KEY'] = self.config['openai_api_key']
+            os.environ['OPENAI_MODEL'] = self.config['openai_model']
+
+            run_script("dnd_second_pass_summary.py")
+            self.status.set("✅ Final summary complete.")
+        except Exception as e:
+            log.exception("Final summary error")
+            messagebox.showerror("Error", str(e))
+            self.status.set("❌ Final summary failed")
+            
+    def run_all(self):
+        self.run_transcription()
+        self.run_chunk_summarize()
+        self.run_second_pass()
 
     def open_settings(self):
         fresh_config = load_config()  # Reload from file
