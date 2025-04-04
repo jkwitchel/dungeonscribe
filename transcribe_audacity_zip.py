@@ -19,6 +19,7 @@ from pathlib import Path
 import torch
 import whisper
 from pydub import AudioSegment
+from pydub.silence import detect_nonsilent
 
 # === Environment Configuration ===
 # Paths and model settings are pulled from environment variables (set by the GUI script).
@@ -65,6 +66,13 @@ def get_mapped_speaker_name(discord_name: str) -> str:
         return f"{player} ({character})" if character else player
     return discord_name
 
+def detect_audio_start(file_path, silence_thresh=-50, chunk_size=100):
+    audio = AudioSegment.from_file(file_path)
+    nonsilent_ranges = detect_nonsilent(audio, min_silence_len=chunk_size, silence_thresh=silence_thresh)
+    if nonsilent_ranges:
+        return nonsilent_ranges[0][0] / 1000  # milliseconds to seconds
+    return 0.0
+
 def transcribe_audio_files(audio_files: list[str], model_name: str = "base") -> list[str]:
     device = "cuda" if torch.cuda.is_available() else "cpu"
     print(f"Using Whisper model '{model_name}' on {device.upper()}.")
@@ -72,10 +80,16 @@ def transcribe_audio_files(audio_files: list[str], model_name: str = "base") -> 
     model = whisper.load_model(model_name, device=device)
     all_segments = []
 
+    start_offsets = {}
+    for file in audio_files:
+        offset = detect_audio_start(file)
+        start_offsets[file] = offset
+
     for file in audio_files:
         discord_user = Path(file).stem
         speaker = get_mapped_speaker_name(discord_user)
-        print(f"🔊 Transcribing {discord_user} as {speaker}...")
+        offset = start_offsets[file]
+        print(f"🔊 Transcribing {discord_user} as {speaker} (offset: {offset:.2f}s)...")
 
         result = model.transcribe(
             file,
@@ -84,9 +98,11 @@ def transcribe_audio_files(audio_files: list[str], model_name: str = "base") -> 
         )
 
         for seg in result["segments"]:
+            adjusted_start = seg["start"] + offset
+            adjusted_end = seg["end"] + offset
             all_segments.append({
-                "start": seg["start"],
-                "end": seg["end"],
+                "start": adjusted_start,
+                "end": adjusted_end,
                 "speaker": speaker,
                 "text": seg["text"].strip()
             })
@@ -99,7 +115,7 @@ def transcribe_audio_files(audio_files: list[str], model_name: str = "base") -> 
         formatted.append(f"{ts} {seg['speaker']}: {seg['text']}")
 
     return formatted
-
+    
 def write_transcript(transcriptions, output_path):
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
     with open(output_path, 'w', encoding='utf-8') as f:
