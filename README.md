@@ -81,6 +81,8 @@ pip install openai torch pydub tiktoken git+https://github.com/openai/whisper.gi
 
 ---
 
+
+
 ## 🧾 Changelog
 
 ### v1.2.0 (2025-04)
