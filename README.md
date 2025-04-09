@@ -1,79 +1,79 @@
 # 🧙‍♂️ The Dungeon Scribe
-
-**The Dungeon Scribe** is a local Windows GUI tool for transcribing and summarizing Dungeons & Dragons sessions recorded using the Craig Discord bot. It uses **Whisper** for speech-to-text and **GPT-4o-mini** for intelligent summarization, supporting both chunk-based and final overviews. The output is ideal for DM notes and Unraid-based backups.
-
----
-
-## 🧩 Features
-
-- 🎤 **Multitrack transcription** of Craig `.zip` files using OpenAI's Whisper
-- ✍️ **Chunk-by-chunk GPT summarization** with detailed event breakdowns
-- 📘 **Final summary** compiled from all chunk summaries
-- 🖥️ **Modern GUI** with dark theme and resizable layout
-- 🔧 **Editable player mapping** (Discord → Player → Character)
-- 📂 **Local + Unraid folder saving** for easy backups
-- 🐍 **Configurable Whisper and GPT models**
-- ✅ Separate buttons to:
-  - Run **only transcription**
-  - Run **only summarization**
-  - Run **both in sequence**
-- 📜 Automatically names transcripts and summaries using today’s date
-- 🪵 Optional **verbose logging**
+**A D&D Session Transcriber and Summarizer**  
+Turn Craig bot multitrack audio recordings into clean transcripts, detailed summaries, and player statistics — all with the click of a button.
 
 ---
 
-## 🧰 Requirements
+## ✨ Features
 
-- Python 3.9+
-- `torch`, `whisper`, `openai`, `pydub`, `tiktoken`, `tkinter`
+- 🎙️ **Craig Bot Audio Support**: Drop a `.zip` file from Craig and transcribe each speaker with Whisper.
+- 🗣️ **Speaker Mapping**: Automatically maps Discord usernames to player and character names using customizable profiles.
+- 🧼 **Transcript Cleaning**: Removes filler words and formats the output into a clean, readable style.
+- 🧠 **Session Summarization**: Generates vivid summaries with GPT based on transcript content using a structured, DM-focused format.
+- 📊 **Metrics Dashboard**: Calculates speaker talk time, word counts, average speech length, and identifies the longest speeches.
+- 🖥️ **Modern GUI**: A dark-themed, responsive interface for managing every step of the process.
+- 🧰 **Configurable Settings**: Easily adjust API keys, folder paths, models, and speaker profiles through a visual settings panel.
+- 💾 **Local & NAS Storage**: Outputs are saved to local folders and mirrored to your Unraid server at `\\server\user\DND\Sessions`.
 
-Install requirements:
+---
 
-```bash
-pip install torch openai pydub git+https://github.com/openai/whisper.git tiktoken
+## 🛠 How It Works
+
+1. **Launch the App** (`0dnd_transcription_gui.py`)
+2. **Drop a Craig `.zip` file** from your D&D session.
+3. **Click “Run All”** or choose:
+   - Transcription Only
+   - Preprocess Only
+   - Summarization Only
+4. **Get Your Output**
+   - Transcript: `E:/SessionTranscripts/Transcripts/YYYY-MM-DD - transcript.txt`
+   - Summary: `E:/SessionTranscripts/Summaries/YYYY-MM-DD - summary.txt`
+   - Metrics Report: `metrics/YYYY-MM-DD - metrics.txt`
+
+---
+
+## 📁 Folder Structure
+
+```
+TheDungeonScribe/
+├── config.json                  # Main configuration and speaker profiles
+├── 0dnd_transcription_gui.py   # The GUI interface
+├── transcribe_audacity_zip.py  # Audio → Transcript (Whisper)
+├── preprocess_transcript.py    # Cleanup script for transcripts
+├── dnd_whole_transcript_summary.py # GPT-powered summary generator
+├── metrics.py                  # Speaker breakdown and metrics report
+├── metrics/                    # Output folder for metrics
+├── transcripts/                # (Configured) Raw transcript storage
+├── summaries/                  # (Configured) Summary storage
 ```
 
 ---
 
-## 🚀 How It Works
+## 🧪 Dependencies
 
-### Step 1: Transcription
-- Runs `transcribe_audacity_zip.py`
-- Extracts Craig `.zip` multitrack audio
-- Transcribes each track using Whisper
-- Applies speaker mapping for cleaner output
-- Outputs formatted `.txt` transcript
+- Python 3.10+
+- `whisper`, `torch`, `pydub`, `openai`, `tiktoken`, `tkinter`
 
-### Step 2: Chunk Summarization
-- Runs `dnd_chunk_and_summarize.py`
-- Splits transcript into ~3000-token chunks
-- Each chunk is summarized by GPT-4o-mini
-- Outputs per-chunk `.txt` files in a folder
-
-### Step 3: Final Summary
-- Runs `dnd_second_pass_summary.py`
-- Combines chunk summaries into one final summary
-- Outputs clean, cohesive session recap for the DM
+To install:
+```bash
+pip install openai torch pydub tiktoken git+https://github.com/openai/whisper.git
+```
 
 ---
 
-## 🛠 Configuration
-
-All settings are saved to `config.json` and editable via the GUI:
-
+## 🧾 Example Config (`config.json`)
 ```json
 {
   "local_transcript_dir": "E:/SessionTranscripts/Transcripts",
   "local_summary_dir": "E:/SessionTranscripts/Summaries",
   "unraid_path": "//TOWER/jwitchel/DND/Sessions",
-  "openai_api_key": "...",
+  "openai_api_key": "your-api-key",
   "openai_model": "gpt-4o-mini",
-  "whisper_model": "medium",
-  "verbose_logging": true,
-  "speaker_map": {
-    "discord_name": {
-      "player": "Player Name",
-      "character": "Character Name"
+  "whisper_model": "large-v3",
+  "selected_profile": "Kingmaker",
+  "speaker_profiles": {
+    "Kingmaker": {
+      "daddyiroh": { "player": "Jeremy", "character": "Qeteb" }
     }
   }
 }
@@ -81,57 +81,13 @@ All settings are saved to `config.json` and editable via the GUI:
 
 ---
 
-## 🖼 GUI Features
+## 🧾 Changelog
 
-- Drag & drop style interface built with `tkinter`
-- Select `.zip` file exported from Craig
-- Transcribe, summarize, or both
-- Access settings to change:
-  - API keys
-  - Folder paths
-  - Speaker mapping
-  - Models used
-- See output status + errors in real time
-
----
-
-## 📁 Output
-
-- **Transcript Location:** `local_transcript_dir`
-- **Summary Location:** `local_summary_dir`
-- Files are saved as:
-
-```
-2025-04-04 - transcript.txt
-2025-04-04 - summary.txt
-```
-
-- Automatically sync with Unraid (manual backup assumed via path)
-
----
-
-## 🧑‍💻 Development Notes
-
-- Use your RTX 3090 GPU for Whisper via PyTorch CUDA
-- GPT model selection is isolated from Whisper
-- Logs are stored in `transcriber.log`, `chunk_summarizer.log`, and `second_pass_summary.log`
-
----
-
-## 💡 Future Ideas
-
-- Export to Obsidian format
-- Rich formatting (Markdown/HTML)
-- Auto-backup to Unraid after each session
-- Searchable transcript archive
-
----
-
-## 📣 Credits
-
-Created by **Jeremy Witchel**  
-Inspired by epic D&D moments and a desire to never forget them.
-
----
-
-🧠 _“Because even the smallest tavern tale deserves to be remembered.”_
+### v1.2.0 (2025-04)
+- 🔁 Speaker mapping now supports multiple profiles
+- 📜 Added preprocessing script to remove filler words and clean transcript
+- 📊 Added `metrics.py` for speaker statistics and participation breakdown
+- 💡 Whisper model and GPT model now selected via dropdowns in settings
+- 🎛 Settings panel improved with profile editor and folder pickers
+- 🧪 Better error handling and logging across the pipeline
+- 🖼 GUI improved with buttons for each step (transcribe, preprocess, summarize)
