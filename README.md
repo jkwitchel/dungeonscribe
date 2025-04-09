@@ -81,6 +81,19 @@ pip install openai torch pydub tiktoken git+https://github.com/openai/whisper.gi
 
 ---
 
+---
+
+## 🖼️ Screenshots
+
+> Add images here to help users understand what the app looks like and how it works.
+
+| Feature               | Screenshot                                 |
+|-----------------------|---------------------------------------------|
+| 🔧 Settings Panel      | ![Settings](screenshots/settings_panel.png) |
+| 📁 Drop Craig Zip      | ![Drop Zip](screenshots/drop_craig_zip.png) |
+| 🧠 Summary Output      | ![Summary](screenshots/summary_output.png)  |
+| 📊 Metrics Report      | ![Metrics](screenshots/metrics_report.png)  |
+
 
 
 ## 🧾 Changelog
